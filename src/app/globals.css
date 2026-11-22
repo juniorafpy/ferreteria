@@ -1,26 +1,98 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --fondo: #f3f4f6;
+  --panel: #ffffff;
+  --panel-2: #f8fafc;
+  --borde: #d9dee5;
+  --texto: #111827;
+  --tenue: #5b6474;
+  --primario: #1d4ed8;
+  --primario-hover: #1e40af;
+  --primario-texto: #ffffff;
+  --acento: #e0e7ff;
+  --peligro: #b91c1c;
+  --exito: #047857;
+  --aviso: #b45309;
+  --foco: #2563eb;
+}
+
+.dark {
+  --fondo: #0b0f17;
+  --panel: #131a26;
+  --panel-2: #182131;
+  --borde: #2a3546;
+  --texto: #e5e9f0;
+  --tenue: #98a2b3;
+  --primario: #3b82f6;
+  --primario-hover: #60a5fa;
+  --primario-texto: #0b0f17;
+  --acento: #1e2a44;
+  --peligro: #f87171;
+  --exito: #34d399;
+  --aviso: #fbbf24;
+  --foco: #60a5fa;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-fondo: var(--fondo);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-borde: var(--borde);
+  --color-texto: var(--texto);
+  --color-tenue: var(--tenue);
+  --color-primario: var(--primario);
+  --color-primario-hover: var(--primario-hover);
+  --color-primario-texto: var(--primario-texto);
+  --color-acento: var(--acento);
+  --color-peligro: var(--peligro);
+  --color-exito: var(--exito);
+  --color-aviso: var(--aviso);
+  --color-foco: var(--foco);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "Consolas", "SFMono-Regular", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 1px;
+}
+
+/* Inputs nativos coherentes con el tema */
+input,
+select,
+textarea {
+  color-scheme: inherit;
+}
+
+@media print {
+  .no-imprimir {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 11px;
+  }
+  .solo-impresion {
+    display: block !important;
+  }
+}
+
+.solo-impresion {
+  display: none;
 }

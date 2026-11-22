@@ -45,6 +45,7 @@ export function BuscadorEntidad({
   textoInicial,
   invalido,
   compacto,
+  modoLista,
 }: {
   tipo: TipoEntidad;
   valor: ValorEntidad;
@@ -57,6 +58,11 @@ export function BuscadorEntidad({
   textoInicial?: string;
   invalido?: boolean;
   compacto?: boolean;
+  /**
+   * La lista de resultados ocupa el flujo normal (no flota) y permanece visible al perder el foco.
+   * Pensado para buscadores dentro de un modal: permite ver muchos resultados con scroll propio.
+   */
+  modoLista?: boolean;
 }) {
   const esArticulo = tipo === 'articulo' || tipo === 'articuloVenta';
   const crear = permitirCrear ?? !esArticulo;
@@ -134,12 +140,13 @@ export function BuscadorEntidad({
               if (q === null) setQ('');
               setAbierto(true);
             }}
-            onBlur={() =>
+            onBlur={() => {
+              if (modoLista) return;
               setTimeout(() => {
                 setAbierto(false);
                 setQ(null);
-              }, 150)
-            }
+              }, 150);
+            }}
             onKeyDown={(e) => {
               if (e.key === 'ArrowDown') {
                 e.preventDefault();
@@ -153,6 +160,8 @@ export function BuscadorEntidad({
                 e.stopPropagation();
                 if (items[activo]) seleccionar(items[activo]);
               } else if (e.key === 'Escape' && abierto) {
+                // En modo lista (modal) Escape cierra el diálogo, no solo la lista.
+                if (modoLista) return;
                 e.preventDefault();
                 e.stopPropagation();
                 setAbierto(false);
@@ -184,7 +193,11 @@ export function BuscadorEntidad({
         <ul
           id={listaId}
           role="listbox"
-          className="absolute left-0 right-0 z-40 mt-1 max-h-72 min-w-72 overflow-auto rounded border border-borde bg-panel py-1 shadow-xl"
+          className={
+            modoLista
+              ? 'relative z-10 mt-2 max-h-[55vh] w-full overflow-auto rounded border border-borde bg-panel py-1 shadow-sm'
+              : 'absolute left-0 right-0 z-40 mt-1 max-h-72 min-w-72 overflow-auto rounded border border-borde bg-panel py-1 shadow-xl'
+          }
         >
           {cargando && items.length === 0 ? <li className="px-3 py-2 text-[12px] text-tenue">Buscando…</li> : null}
           {!cargando && items.length === 0 ? (

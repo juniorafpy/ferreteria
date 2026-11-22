@@ -514,13 +514,14 @@ export function GrillaDetalle({
         ancho="max-w-4xl"
       >
         {busqueda ? (
-          <div className="text-[13.5px] [&_input]:h-11 [&_input]:px-3 [&_input]:pr-9 [&_input]:text-[14px] [&_li]:py-2.5 [&_li]:text-[13.5px] [&_ul]:max-h-[60vh]">
+          <div className="text-[13.5px] [&_input]:h-11 [&_input]:px-3 [&_input]:pr-9 [&_input]:text-[14px] [&_li]:py-2.5 [&_li]:text-[13.5px]">
             <BuscadorEntidad
               key={busqueda.key + busqueda.q}
               tipo={tipoBusqueda}
               valor={null}
               autoFocus
               textoInicial={busqueda.q}
+              modoLista
               onCambiar={(a) => {
                 if (a) {
                   const f = ref.current.findIndex((x) => x.key === busqueda.key);

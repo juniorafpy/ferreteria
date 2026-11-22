@@ -25,9 +25,25 @@ Variables de entorno:
 
 | Variable | Uso |
 | --- | --- |
-| `DATABASE_URL` | Cadena de conexión PostgreSQL |
+| `DATABASE_URL` | Cadena de conexión PostgreSQL usada por la app (en Supabase: Transaction pooler, puerto 6543) |
+| `DIRECT_URL` | Conexión directa / Session pooler (puerto 5432) para migraciones y seed en Supabase |
 | `SESSION_SECRET` | Secreto HMAC para la cookie de sesión |
 | `SIFEN_CSC`, `SIFEN_CERT_PASSWORD` | Referencias usadas por la configuración SIFEN (no se guardan en la BD) |
+| `DATABASE_SSL`, `DATABASE_PREPARE`, `DATABASE_POOL_MAX` | Opcionales; SSL y `prepare` se detectan automáticamente en Supabase |
+
+### Supabase
+
+1. En **Project Settings → Database → Connection string** copie:
+   - **Transaction pooler** (puerto `6543`) → `DATABASE_URL`.
+   - **Direct connection** o **Session pooler** (puerto `5432`) → `DIRECT_URL`.
+2. Agregue `?sslmode=require` si la cadena no lo incluye.
+3. Aplique migraciones y seed (usan `DIRECT_URL` automáticamente):
+
+```bash
+npm run db:migrate
+npm run db:seed
+```
+
 
 Credenciales demo y detalle del seed: [`src/db/seed/README.md`](src/db/seed/README.md)
 (usuario `admin` / `Admin.Ferre2026`).

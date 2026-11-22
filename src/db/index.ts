@@ -22,6 +22,27 @@ type GlobalDb = typeof globalThis & {
   __ferreDb?: DB;
 };
 
+/**
+ * Opciones de conexión según el proveedor:
+ * - Supabase exige SSL. Se detecta por el host o por `sslmode=require` en la URL.
+ * - El Transaction pooler de Supabase (puerto 6543) no soporta sentencias preparadas:
+ *   se desactivan automáticamente (o con DATABASE_PREPARE=false). Para migraciones y seed
+ *   conviene usar la conexión directa / Session pooler (puerto 5432, variable DIRECT_URL).
+ */
+function opcionesConexion(url: string): { ssl?: 'require' | false; prepare: boolean } {
+  const esSupabase = /supabase\.(co|com|net)/i.test(url);
+  const poolerTransaccional = esSupabase && /:6543(\/|\?|$)/.test(url);
+  const sslEnv = process.env.DATABASE_SSL;
+  const ssl =
+    sslEnv === 'false'
+      ? false
+      : sslEnv === 'true' || esSupabase || /sslmode=require/i.test(url)
+        ? ('require' as const)
+        : undefined;
+  const prepare = process.env.DATABASE_PREPARE ? process.env.DATABASE_PREPARE === 'true' : !poolerTransaccional;
+  return { ssl, prepare };
+}
+
 function crearDb(): DB {
   const url = process.env.DATABASE_URL;
   if (!url) {
@@ -32,7 +53,7 @@ function crearDb(): DB {
     g.__ferreSql ??
     postgres(url, {
       max: Number(process.env.DATABASE_POOL_MAX ?? 10),
-      prepare: true,
+      ...opcionesConexion(url),
     });
   const instancia = drizzle(client, { schema });
   // Singleton en desarrollo para sobrevivir a HMR de Next.js

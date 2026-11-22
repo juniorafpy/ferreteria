@@ -507,25 +507,32 @@ export function GrillaDetalle({
         </div>
       ) : null}
 
-      <Modal abierto={busqueda !== null} onCerrar={() => setBusqueda(null)} titulo="Buscar artículo (F2)" ancho="max-w-xl">
+      <Modal
+        abierto={busqueda !== null}
+        onCerrar={() => setBusqueda(null)}
+        titulo="Buscar artículo (F2)"
+        ancho="max-w-4xl"
+      >
         {busqueda ? (
-          <BuscadorEntidad
-            key={busqueda.key + busqueda.q}
-            tipo={tipoBusqueda}
-            valor={null}
-            autoFocus
-            textoInicial={busqueda.q}
-            onCambiar={(a) => {
-              if (a) {
-                const f = ref.current.findIndex((x) => x.key === busqueda.key);
-                asignarArticulo(busqueda.key, a);
-                focoPendiente.current = { f, c: 1 };
-              }
-              setBusqueda(null);
-            }}
-          />
+          <div className="text-[13.5px] [&_input]:h-11 [&_input]:px-3 [&_input]:pr-9 [&_input]:text-[14px] [&_li]:py-2.5 [&_li]:text-[13.5px] [&_ul]:max-h-[60vh]">
+            <BuscadorEntidad
+              key={busqueda.key + busqueda.q}
+              tipo={tipoBusqueda}
+              valor={null}
+              autoFocus
+              textoInicial={busqueda.q}
+              onCambiar={(a) => {
+                if (a) {
+                  const f = ref.current.findIndex((x) => x.key === busqueda.key);
+                  asignarArticulo(busqueda.key, a);
+                  focoPendiente.current = { f, c: 1 };
+                }
+                setBusqueda(null);
+              }}
+            />
+          </div>
         ) : null}
-        <p className="mt-2 text-[11px] text-tenue">↑/↓ para moverse, Enter para seleccionar. {busqueda?.q ? `Resultados para “${busqueda.q}”.` : ''}</p>
+        <p className="mt-3 text-[12px] text-tenue">↑/↓ para moverse, Enter para seleccionar. {busqueda?.q ? `Resultados para “${busqueda.q}”.` : ''}</p>
       </Modal>
     </div>
   );

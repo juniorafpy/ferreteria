@@ -3,8 +3,8 @@ import { obtenerFacturaCompra } from '@/server/queries/compras';
 import { anularFacturaCompra, confirmarFacturaCompra, guardarFacturaCompra } from '@/server/actions/compras';
 import { FormularioDocumento } from '@/components/forms/FormularioDocumento';
 import { NoEncontrado } from '@/components/ui/Pagina';
-import { PanelDocumentosRelacionados } from '@/components/ui/PanelDocumentosRelacionados';
-import { leer, leerPrimero } from '@/lib/ui/datos';
+import { docsRel, PanelDocumentosRelacionados } from '@/components/ui/PanelDocumentosRelacionados';
+import { leer } from '@/lib/ui/datos';
 import { formatoNumeroFactura, hoyISO } from '@/lib/ui/formato';
 import { cargarCatalogos, OPC_CONDICION } from '../../../_lib/catalogos';
 import { cargarFicha, idRuta, type PropsFicha } from '../../../_lib/pagina';
@@ -75,7 +75,7 @@ export default async function FichaFacturaCompra({ params }: PropsFicha) {
           </Link>
         ) : null
       }
-      lateral={id ? <PanelDocumentosRelacionados relacionados={leerPrimero(registro, 'relacionados', 'documentosRelacionados')} /> : null}
+      lateral={id ? <PanelDocumentosRelacionados relacionados={{ origen: docsRel('orden_compra', leer(base, 'ordenCompra')), destino: docsRel('recepcion', leer(base, 'recepciones')) }} /> : null}
     />
   );
 }

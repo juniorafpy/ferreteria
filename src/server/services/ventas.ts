@@ -174,10 +174,23 @@ async function referenciasPresupuesto(tx: DbLike, presupuestoId: number | null |
   const refs = new Map<number, ReferenciaOrigen>();
   if (!presupuestoId) return refs;
   const det = await tx.select().from(presupuestoDetalles).where(eq(presupuestoDetalles.presupuesto_id, presupuestoId));
+  // Descuento ya facturado por ítem (facturas confirmadas) para prorratear sin exceder el pactado.
+  const facturado = await tx
+    .select({
+      origen: facturaVentaDetalles.detalle_origen_id,
+      desc: sql<number>`coalesce(sum(${facturaVentaDetalles.descuento_gs}), 0)`.mapWith(Number),
+    })
+    .from(facturaVentaDetalles)
+    .innerJoin(facturasVenta, eq(facturasVenta.id, facturaVentaDetalles.factura_venta_id))
+    .where(and(eq(facturasVenta.presupuesto_id, presupuestoId), eq(facturasVenta.estado, 'confirmado')))
+    .groupBy(facturaVentaDetalles.detalle_origen_id);
+  const descFacturado = new Map(facturado.map((x) => [x.origen, x.desc]));
   for (const l of det) {
     refs.set(l.id, {
       precioUnitarioGs: l.precio_unitario_gs,
       cantidad: l.cantidad,
+      cantidadFacturada: l.cantidad_facturada,
+      descuentoFacturadoGs: descFacturado.get(l.id) ?? 0,
       descuentoGs: l.descuento_gs,
       origenDescuento: l.origen_descuento,
       descuentoId: l.descuento_id,
@@ -347,7 +360,7 @@ export async function crearFacturaDesdePresupuesto(tx: DbLike, ctx: Ctx, presupu
         unidadMedidaId: l.unidad_medida_id,
         cantidad: pend,
         precioUnitarioGs: l.precio_unitario_gs,
-        descuentoGs: Math.round((l.descuento_gs * pend) / l.cantidad),
+        // descuentoGs omitido: se hereda prorrateado del presupuesto (ver prepararLineasVenta).
       };
     });
   asegurar(lineas.length > 0, 'El presupuesto no tiene pendientes');

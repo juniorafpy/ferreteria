@@ -617,6 +617,9 @@ export async function guardarRecepcion(tx: DbLike, ctx: Ctx, d: RecepcionInput) 
     .where(eq(facturaCompraDetalles.factura_compra_id, f.id))
     .orderBy(asc(facturaCompraDetalles.linea));
   const porId = new Map(fdet.map((x) => [x.id, x]));
+  // QA: solo `detalles` omitido/null significa "recibir todo lo pendiente"; un arreglo vacío explícito
+  // (p. ej. todas las cantidades en 0 en la UI) se rechaza en vez de recibir la factura completa.
+  asegurar(!d.detalles || d.detalles.length > 0, 'Indique al menos una cantidad a recibir');
   const pedidas =
     d.detalles && d.detalles.length > 0
       ? d.detalles

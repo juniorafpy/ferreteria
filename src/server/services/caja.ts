@@ -69,7 +69,13 @@ export async function cerrarCaja(tx: DbLike, ctx: Ctx, d: CerrarCajaInput) {
     .for('update');
   asegurar(s, 'Sesión de caja inexistente');
   asegurar(s.estado === 'abierta', 'La sesión ya está cerrada');
-  asegurar(s.usuario_id === ctx.usuarioId || ctx.permisos.includes('caja.sesion.cerrar'), 'La sesión pertenece a otro usuario');
+  // QA: antes la condición era siempre verdadera (la acción ya exige caja.sesion.cerrar), por lo que
+  // cualquier cajero cerraba sesiones ajenas de cualquier sucursal. Ahora: la propia, o una de la
+  // misma sucursal si el usuario es supervisor (caja.cobro.anular).
+  asegurar(
+    s.usuario_id === ctx.usuarioId || (s.sucursal_id === ctx.sucursalId && ctx.permisos.includes('caja.cobro.anular')),
+    'La sesión pertenece a otro usuario',
+  );
   const sistema = await totalesSesion(tx, s.id);
   const declarado = new Map(d.arqueo.map((a) => [a.medioPago, a]));
   const filas = MEDIOS.map((m) => {

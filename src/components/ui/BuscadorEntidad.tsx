@@ -209,8 +209,8 @@ export function BuscadorEntidad({
               {esArticulo ? (
                 <span className="shrink-0 text-[11px] tabular-nums text-tenue">
                   {leer(f, 'precio_venta_gs') !== undefined ? formatoGs(leerPrimero(f, 'precio_venta_gs', 'precio_gs')) : ''}
-                  {leerPrimero(f, 'stock', 'stock_disponible', 'existencia') !== undefined
-                    ? ` · Stock ${formatoCantidad(leerPrimero(f, 'stock', 'stock_disponible', 'existencia'))}`
+                  {leerPrimero(f, 'stock_sucursal', 'stock', 'stock_disponible', 'existencia') !== undefined
+                    ? ` · Stock ${formatoCantidad(leerPrimero(f, 'stock_sucursal', 'stock', 'stock_disponible', 'existencia'))}`
                     : ''}
                 </span>
               ) : null}

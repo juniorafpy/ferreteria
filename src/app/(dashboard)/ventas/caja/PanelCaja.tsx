@@ -86,7 +86,8 @@ export function PanelCaja({ cajas, sesion }: { cajas: Fila[]; sesion: Fila | nul
 
   const sesionId = num(leer(sesion, 'id'));
   const montoApertura = num(leer(sesion, 'monto_apertura_gs'));
-  const sistema = (m: (typeof MEDIOS)[number]) => num(leer(sesion, m.clave)) + (m.medio === 'efectivo' ? montoApertura : 0);
+  // Durante la sesión abierta el backend expone `totales.{medio}`; al cierre quedan en total_*_gs.
+  const sistema = (m: (typeof MEDIOS)[number]) => num(leerPrimero(sesion, `totales.${m.medio}`, m.clave)) + (m.medio === 'efectivo' ? montoApertura : 0);
   const cobros = comoFilas(leer(sesion, 'cobros'));
   const totalDif = MEDIOS.reduce((a, m) => a + ((declarado[m.medio] ?? 0) - sistema(m)), 0);
 

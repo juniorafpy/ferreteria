@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getSesion } from '@/server/auth/session';
-import { listarEmpresas, listarSucursales } from '@/server/queries/ajustes';
+import { listarEmpresas, listarMisSucursales, listarSucursales } from '@/server/queries/ajustes';
 import { Shell, type ContextoUI } from '@/components/layout/Shell';
 import { comoFilas, leer, leerPrimero, texto } from '@/lib/ui/datos';
 
@@ -16,15 +16,21 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const sesion = await getSesion();
   if (!sesion) redirect('/login');
 
-  const [empresas, sucursales] = await Promise.all([cargar(() => listarEmpresas()), cargar(() => listarSucursales())]);
+  const [empresas, misSucursales, sucursales] = await Promise.all([
+    cargar(() => listarEmpresas()),
+    cargar(() => listarMisSucursales()),
+    cargar(() => listarSucursales()),
+  ]);
   const filasEmp = comoFilas(empresas);
-  const filasSuc = comoFilas(sucursales);
+  const filasSuc = comoFilas(misSucursales).length ? comoFilas(misSucursales) : comoFilas(sucursales);
   const emp = filasEmp.find((e) => Number(leer(e, 'id')) === sesion.empresaId);
   const suc = filasSuc.find((s) => Number(leer(s, 'id')) === sesion.sucursalId);
 
   const contexto: ContextoUI = {
-    empresa: texto(leerPrimero(emp, 'nombre_fantasia', 'razon_social')) || `Empresa #${sesion.empresaId}`,
-    sucursal: suc ? `${texto(leer(suc, 'codigo'))} · ${texto(leer(suc, 'nombre'))}` : `Sucursal #${sesion.sucursalId}`,
+    empresa: texto(leer(sesion, 'empresaNombre')) || texto(leerPrimero(emp, 'nombre_fantasia', 'razon_social')) || `Empresa #${sesion.empresaId}`,
+    sucursal: suc
+      ? `${texto(leer(suc, 'codigo'))} · ${texto(leer(suc, 'nombre'))}`
+      : texto(leer(sesion, 'sucursalNombre')) || `Sucursal #${sesion.sucursalId}`,
     empresas: filasEmp.map((e) => ({ valor: texto(leer(e, 'id')), etiqueta: texto(leerPrimero(e, 'nombre_fantasia', 'razon_social')) })),
     sucursales: filasSuc.map((s) => ({
       valor: texto(leer(s, 'id')),

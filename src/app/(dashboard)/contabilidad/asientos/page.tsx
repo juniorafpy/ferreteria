@@ -8,7 +8,8 @@ export const metadata = { title: 'Asientos' };
 
 export default async function Asientos({ searchParams }: PropsLista) {
   const sp = await searchParams;
-  const { proveedorId: _p, clienteId: _c, ...f } = filtroLista(sp);
+  const { q, desde, hasta, estado } = filtroLista(sp);
+  const f = { q, desde, hasta, estado };
   const filas = comoFilas(await seguro(() => listarAsientos(f), []));
   return (
     <ListadoDocumentos

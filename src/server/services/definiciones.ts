@@ -240,6 +240,7 @@ export async function guardarDescuento(tx: DbLike, ctx: Ctx, d: DescuentoInput) 
     prioridad: d.prioridad ?? 100,
     acumulable: d.acumulable ?? false,
     todas_sucursales: d.todasSucursales ?? false,
+    ...(d.estado ? { estado: d.estado } : {}),
   };
   let id: number;
   if (d.id) {

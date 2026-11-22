@@ -37,7 +37,7 @@ const FUENTES = {
 const COLS_IMPORTAR: ColumnaDef[] = [
   { clave: 'numero', titulo: 'Número' },
   { clave: 'fecha', titulo: 'Fecha', tipo: 'fecha' },
-  { clave: 'proveedor', titulo: 'Proveedor', alternativas: ['proveedor.razon_social', 'proveedor_razon_social', 'razon_social'] },
+  { clave: 'proveedor_nombre', titulo: 'Proveedor', alternativas: ['proveedor.persona.razon_social', 'proveedor.razon_social', 'razon_social'] },
   { clave: 'total_gs', titulo: 'Total', tipo: 'gs' },
   { clave: 'estado', titulo: 'Estado', tipo: 'estado' },
 ];
@@ -161,7 +161,7 @@ export function FormularioDocumento({
         const v = leer(cabeceraOrigen, k);
         if (v !== undefined && v !== null) extra[k] = v;
       }
-      const prov = leerPrimero(cabeceraOrigen, 'proveedor.razon_social', 'proveedor_razon_social');
+      const prov = leerPrimero(cabeceraOrigen, 'proveedor_nombre', 'proveedor.persona.razon_social', 'proveedor.razon_social');
       if (prov) extra['proveedorId__etiqueta'] = prov;
       setCab((c) => ({ ...c, ...extra }));
     }

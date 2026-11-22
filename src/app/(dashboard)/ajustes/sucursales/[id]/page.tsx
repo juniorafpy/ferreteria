@@ -1,4 +1,4 @@
-import { listarPuntosExpedicion, listarSucursales, listarTimbrados } from '@/server/queries/ajustes';
+import { listarPuntosExpedicion, listarSucursales, listarTimbrados, obtenerConfiguracionSifen } from '@/server/queries/ajustes';
 import { guardarSucursal } from '@/server/actions/ajustes';
 import { FormularioMaestro } from '@/components/forms/FormularioMaestro';
 import type { CampoDef } from '@/components/forms/CamposGrid';
@@ -24,10 +24,11 @@ async function guardar(datos: Record<string, unknown>) {
 
 export default async function FichaSucursal({ params }: PropsFicha) {
   const id = idRuta((await params).id);
-  const [sucursales, puntos, timbrados, cat] = await Promise.all([
+  const [sucursales, puntos, timbrados, configs, cat] = await Promise.all([
     seguro(() => listarSucursales(), []),
     seguro(() => listarPuntosExpedicion(), []),
     seguro(() => listarTimbrados(), []),
+    seguro(() => obtenerConfiguracionSifen(), []),
     cargarCatalogos(),
   ]);
   const base = id ? (comoFilas(sucursales).find((s) => Number(leer(s, 'id')) === id) ?? null) : null;
@@ -65,7 +66,7 @@ export default async function FichaSucursal({ params }: PropsFicha) {
           establecimientoId={establecimientoId ? Number(establecimientoId) : null}
           puntos={comoFilas(puntos).filter((p) => Number(leer(p, 'sucursal_id')) === id)}
           timbrados={comoFilas(timbrados)}
-          configSifen={(leerPrimero(base, 'configuracionSifen', 'configuracion_sifen', 'sifen') as Record<string, unknown> | undefined) ?? null}
+          configSifen={comoFilas(configs).find((c) => Number(leer(c, 'sucursal_id')) === id) ?? null}
         />
       ) : null}
     </FormularioMaestro>

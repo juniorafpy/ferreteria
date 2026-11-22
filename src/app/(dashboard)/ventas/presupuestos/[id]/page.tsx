@@ -2,8 +2,8 @@ import { obtenerPresupuesto } from '@/server/queries/ventas';
 import { anularPresupuesto, confirmarPresupuesto, guardarPresupuesto } from '@/server/actions/ventas';
 import { FormularioDocumento } from '@/components/forms/FormularioDocumento';
 import { NoEncontrado } from '@/components/ui/Pagina';
-import { PanelDocumentosRelacionados } from '@/components/ui/PanelDocumentosRelacionados';
-import { leer, leerPrimero, texto } from '@/lib/ui/datos';
+import { docsRel, PanelDocumentosRelacionados } from '@/components/ui/PanelDocumentosRelacionados';
+import { leer, texto } from '@/lib/ui/datos';
 import { hoyISO } from '@/lib/ui/formato';
 import { OPC_CONDICION } from '../../../_lib/catalogos';
 import { cargarFicha, idRuta, type PropsFicha } from '../../../_lib/pagina';
@@ -36,7 +36,7 @@ export default async function FichaPresupuesto({ params }: PropsFicha) {
         { clave: 'clienteId', etiqueta: 'Cliente', tipo: 'entidad', entidad: 'cliente', ancho: 2, claveEtiqueta: 'cliente.razon_social' },
         { clave: 'observacion', etiqueta: 'Observación', tipo: 'area', ancho: 2 },
       ]}
-      lateral={id ? <PanelDocumentosRelacionados relacionados={leerPrimero(registro, 'relacionados', 'documentosRelacionados')} /> : null}
+      lateral={id ? <PanelDocumentosRelacionados relacionados={{ origen: [], destino: docsRel('factura_venta', leer(registro, 'facturas')) }} /> : null}
     />
   );
 }

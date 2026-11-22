@@ -59,7 +59,7 @@ export function FormularioAsiento({ registro, cuentas }: { registro: Fila | null
         concepto: concepto.trim(),
         confirmar,
         lineas: validas.map((l) => ({ cuentaId: Number(l.cuentaId), debeGs: l.debeGs, haberGs: l.haberGs, glosa: l.glosa || null })),
-      } as never)) as ResultadoAccion;
+      })) as ResultadoAccion;
       setRes(r);
       if (r.ok) {
         const nid = idDeResultado(r) ?? id;

@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import { anularOrdenPago, registrarOrdenPago } from '@/server/actions/compras';
+import type { OrdenPagoInput } from '@/server/validation/compras';
 import { cuentasPagarUI } from '@/app/(dashboard)/_acciones/busqueda';
 import { TablaAplicacion } from '@/components/forms/TablaAplicacion';
 import { BadgeEstado } from '@/components/ui/Badge';
@@ -59,15 +60,15 @@ export function FormularioOrdenPago({ registro }: { registro: Fila | null }) {
       async () =>
         (await registrarOrdenPago({
           fecha,
-          proveedorId: proveedor?.id,
-          medioPago: medio,
+          proveedorId: proveedor?.id ?? 0,
+          medioPago: medio as OrdenPagoInput['medioPago'],
           referencia: referencia || null,
           banco: banco || null,
           observacion: observacion || null,
           cuentas: Object.entries(aplicado)
             .filter(([, m]) => m > 0)
             .map(([cid, m]) => ({ cuentaPagarId: Number(cid), montoGs: m })),
-        } as never)) as ResultadoAccion,
+        })) as ResultadoAccion,
     );
 
   return (

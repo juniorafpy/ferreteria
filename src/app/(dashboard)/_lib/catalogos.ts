@@ -72,8 +72,8 @@ export const OPC_MEDIO_PAGO: Opcion[] = [
   { valor: 'qr', etiqueta: 'QR' },
 ];
 
-/** Carga segura de una consulta (devuelve `def` si falla). */
-export async function seguro<T>(fn: () => Promise<T>, def: T): Promise<T> {
+/** Carga segura de una consulta (devuelve `def` si falla). Resultado `unknown`: normalizar con comoFilas/comoRegistro. */
+export async function seguro(fn: () => Promise<unknown>, def: unknown): Promise<unknown> {
   try {
     return await fn();
   } catch (e) {

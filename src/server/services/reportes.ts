@@ -714,6 +714,24 @@ export const REPORTES = {
 } as const;
 export type NombreReporte = keyof typeof REPORTES;
 
+/** Slugs de URL cuyo camelCase no coincide con el nombre de la función. */
+const ALIAS_REPORTE: Record<string, NombreReporte> = {
+  presupuestosPendientes: 'presupuestosPendientesVsFacturados',
+};
+
+/**
+ * Resuelve el nombre de un reporte a partir del nombre de la función (`libroVentas`) o del slug
+ * kebab-case de la UI (`libro-ventas`, catálogo en src/lib/ui/reportes.ts). Null si no existe.
+ */
+export function resolverNombreReporte(nombre: string): NombreReporte | null {
+  const camel = nombre.trim().replace(/[-_]+([a-z0-9])/gi, (_, c: string) => c.toUpperCase());
+  for (const c of [nombre, camel]) {
+    if (Object.prototype.hasOwnProperty.call(REPORTES, c)) return c as NombreReporte;
+    if (Object.prototype.hasOwnProperty.call(ALIAS_REPORTE, c)) return ALIAS_REPORTE[c];
+  }
+  return null;
+}
+
 /** Permiso requerido por reporte. */
 export const PERMISO_REPORTE: Record<NombreReporte, string> = {
   libroCompras: 'reportes.compras.ver',

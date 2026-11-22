@@ -2,8 +2,8 @@ import { obtenerFacturaVenta } from '@/server/queries/ventas';
 import { anularFacturaVenta, confirmarFacturaVenta, guardarFacturaVenta } from '@/server/actions/ventas';
 import { FormularioDocumento } from '@/components/forms/FormularioDocumento';
 import { NoEncontrado } from '@/components/ui/Pagina';
-import { PanelDocumentosRelacionados } from '@/components/ui/PanelDocumentosRelacionados';
-import { leer, leerPrimero } from '@/lib/ui/datos';
+import { docsRel, PanelDocumentosRelacionados } from '@/components/ui/PanelDocumentosRelacionados';
+import { leer } from '@/lib/ui/datos';
 import { formatoNumeroFactura } from '@/lib/ui/formato';
 import { cargarCatalogos, OPC_CONDICION } from '../../../_lib/catalogos';
 import { cargarFicha, idRuta, type PropsFicha } from '../../../_lib/pagina';
@@ -44,7 +44,12 @@ export default async function FichaFacturaVenta({ params }: PropsFicha) {
         registro ? (
           <>
             <PanelSifen factura={registro} />
-            <PanelDocumentosRelacionados relacionados={leerPrimero(registro, 'relacionados', 'documentosRelacionados')} />
+            <PanelDocumentosRelacionados
+              relacionados={{
+                origen: docsRel('presupuesto', leer(registro, 'documentosRelacionados.presupuesto') ?? leer(registro, 'presupuesto')),
+                destino: [...docsRel('cobro', leer(registro, 'documentosRelacionados.cobros')), ...docsRel('asiento', leer(registro, 'documentosRelacionados.asientos'))],
+              }}
+            />
           </>
         ) : null
       }

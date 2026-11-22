@@ -4,7 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { calcularLinea, calcularTotales } from '@/server/fiscal/iva';
 import { buscarArticulosUI, buscarArticulosVentaUI, resolverDescuentoUI } from '@/app/(dashboard)/_acciones/busqueda';
 import { comoFilas, leer, leerPrimero, num, numONulo, texto, type Fila } from '@/lib/ui/datos';
-import { formatoCantidad, formatoGs, formatoMiles, parseDecimal, parseEntero } from '@/lib/ui/formato';
+import { formatoCantidad, formatoGs, formatoMiles, hoyISO, parseDecimal, parseEntero } from '@/lib/ui/formato';
 import { useSesion } from '@/components/layout/SesionContexto';
 import { Badge } from './Badge';
 import { BuscadorEntidad, etiquetaArticulo } from './BuscadorEntidad';
@@ -28,6 +28,8 @@ export type LineaDetalle = {
   descuentoGs: number;
   origenDescuento: OrigenDescuento;
   descuentoId: number | null;
+  /** Etiqueta del descuento automático aplicado (código · nombre). */
+  descuentoNombre?: string;
   tipoIva: TipoIva;
   totalLineaGs: number;
   ivaGs: number;
@@ -98,7 +100,7 @@ export function lineasDesde(detalles: unknown, opciones: { pendienteComoCantidad
       descripcion: texto(leerPrimero(d, 'descripcion', 'articulo.descripcion', 'articulo_descripcion')),
       unidadMedidaId: numONulo(leer(d, 'unidad_medida_id')),
       cantidad: opciones.pendienteComoCantidad && cantidadPendiente !== null ? cantidadPendiente : num(leer(d, 'cantidad'), 1),
-      precioUnitarioGs: num(leerPrimero(d, 'precio_unitario_gs', 'costo_unitario_gs')),
+      precioUnitarioGs: num(leerPrimero(d, 'precio_unitario_gs', 'costo_unitario_gs', 'articulo.costo_referencia_gs')),
       descuentoGs: num(leer(d, 'descuento_gs')),
       origenDescuento: (texto(leer(d, 'origen_descuento')) || 'ninguno') as OrigenDescuento,
       descuentoId: numONulo(leer(d, 'descuento_id')),
@@ -175,8 +177,12 @@ export function GrillaDetalle({
   mostrarStock?: boolean;
 }) {
   const sesion = useSesion();
-  const puedeDescManual = !!sesion && (sesion.permisos.includes('ventas.descuento_manual') || sesion.permisos.includes('*'));
+  // Coherente con el backend (prepararLineasVenta): permiso exacto ventas.descuento_manual, sin comodín '*'
+  // (la sesión nunca contiene '*': el rol ADMIN recibe todos los códigos).
+  const puedeDescManual = !!sesion && sesion.permisos.includes('ventas.descuento_manual');
   const topePct = sesion?.descuentoManualMaxPct ?? 0;
+  // En ventas, un precio distinto al de lista exige articulos.precio.modificar (el backend revalida).
+  const puedeModificarPrecio = precio !== 'venta' || (!!sesion && sesion.permisos.includes('articulos.precio.modificar'));
   const gid = useId();
   const ref = useRef(lineas);
   ref.current = lineas;
@@ -206,7 +212,7 @@ export function GrillaDetalle({
     const r = await resolverDescuentoUI({
       articuloId: l.articuloId,
       cantidad: l.cantidad,
-      fecha: fecha ?? new Date().toISOString().slice(0, 10),
+      fecha: fecha ?? hoyISO(),
       sucursalId: sesion?.sucursalId,
     });
     const actual = ref.current.find((x) => x.key === key);
@@ -214,7 +220,13 @@ export function GrillaDetalle({
     const d = num(leerPrimero(r, 'descuentoGs', 'descuento_gs'));
     actualizar(key, (x) =>
       r && d > 0
-        ? { ...x, descuentoGs: d, origenDescuento: 'automatico', descuentoId: numONulo(leerPrimero(r, 'descuentoId', 'descuento_id')) }
+        ? {
+            ...x,
+            descuentoGs: d,
+            origenDescuento: 'automatico',
+            descuentoId: numONulo(leerPrimero(r, 'descuentoId', 'descuento_id')),
+            descuentoNombre: [texto(leer(r, 'codigo')), texto(leer(r, 'nombre'))].filter(Boolean).join(' · '),
+          }
         : { ...x, descuentoGs: 0, origenDescuento: 'ninguno', descuentoId: null },
     );
   }
@@ -232,7 +244,7 @@ export function GrillaDetalle({
       unidadMedidaId: numONulo(leer(a, 'unidad_medida_id')),
       tipoIva: (texto(leer(a, 'tipo_iva')) || 'iva10') as TipoIva,
       precioUnitarioGs: precioArt,
-      stock: numONulo(leerPrimero(a, 'stock', 'stock_disponible', 'existencia')),
+      stock: numONulo(leerPrimero(a, 'stock_deposito', 'stock_sucursal', 'stock', 'stock_disponible', 'existencia')),
       descuentoGs: l.origenDescuento === 'manual' ? l.descuentoGs : 0,
       origenDescuento: l.origenDescuento === 'manual' ? 'manual' : 'ninguno',
       descuentoId: null,
@@ -317,7 +329,7 @@ export function GrillaDetalle({
           </thead>
           <tbody>
             {lineas.map((l, f) => {
-              const bruto = l.cantidad * l.precioUnitarioGs;
+              const bruto = Math.round(l.cantidad * l.precioUnitarioGs);
               const excedeTope = l.origenDescuento === 'manual' && bruto > 0 && (l.descuentoGs / bruto) * 100 > topePct + 1e-9;
               const excedePend =
                 l.detalleOrigenId !== null && l.cantidadPendiente !== null && l.cantidadPendiente !== undefined && l.cantidad > l.cantidadPendiente;
@@ -389,7 +401,8 @@ export function GrillaDetalle({
                           {...attrs(f, 2, l.key)}
                           aria-label={`Precio unitario línea ${f + 1}`}
                           inputMode="numeric"
-                          disabled={soloLectura || !precioEditable}
+                          disabled={soloLectura || !precioEditable || !puedeModificarPrecio}
+                          title={!puedeModificarPrecio ? 'Precio de lista (sin permiso articulos.precio.modificar)' : undefined}
                           value={formatoMiles(l.precioUnitarioGs)}
                           onChange={(e) => actualizar(l.key, (x) => ({ ...x, precioUnitarioGs: Math.abs(parseEntero(e.target.value)) }))}
                           className={`${celdaInput} text-right tabular-nums`}
@@ -399,7 +412,7 @@ export function GrillaDetalle({
                         <td className="px-0.5">
                           <div className="flex items-center gap-1">
                             {l.origenDescuento !== 'ninguno' ? (
-                              <Badge tono={l.origenDescuento === 'automatico' ? 'violeta' : 'ambar'} titulo={l.origenDescuento === 'automatico' ? `Descuento automático #${l.descuentoId ?? ''}` : 'Descuento manual'}>
+                              <Badge tono={l.origenDescuento === 'automatico' ? 'violeta' : 'ambar'} titulo={l.origenDescuento === 'automatico' ? `Descuento automático ${l.descuentoNombre || `#${l.descuentoId ?? ''}`}` : 'Descuento manual'}>
                                 {l.origenDescuento === 'automatico' ? 'A' : 'M'}
                               </Badge>
                             ) : null}

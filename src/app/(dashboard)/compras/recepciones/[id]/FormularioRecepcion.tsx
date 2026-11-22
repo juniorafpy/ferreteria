@@ -3,11 +3,12 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useTransition } from 'react';
 import { anularRecepcion, confirmarRecepcion, guardarRecepcion } from '@/server/actions/compras';
+import type { RecepcionInput } from '@/server/validation/compras';
 import { facturasPendientesRecepcionUI, obtenerFacturaCompraUI } from '@/app/(dashboard)/_acciones/busqueda';
 import { BadgeEstado } from '@/components/ui/Badge';
 import { Aviso, Boton, DateInput, Field, NumberInput, Select, Textarea } from '@/components/ui/Campos';
 import { Seccion } from '@/components/ui/Pagina';
-import { PanelDocumentosRelacionados } from '@/components/ui/PanelDocumentosRelacionados';
+import { docsRel, PanelDocumentosRelacionados } from '@/components/ui/PanelDocumentosRelacionados';
 import { ToolbarDocumento } from '@/components/ui/ToolbarDocumento';
 import { comoFilas, comoRegistro, erroresPorCampo, idDeResultado, leer, leerPrimero, num, numONulo, texto, type Fila, type Opcion, type ResultadoAccion } from '@/lib/ui/datos';
 import { formatoCantidad, formatoGs, formatoNumeroFactura, hoyISO } from '@/lib/ui/formato';
@@ -40,8 +41,8 @@ function lineasDeFactura(f: Fila | null): LineaRec[] {
 }
 
 function etiquetaFactura(f: Fila): string {
-  const nro = formatoNumeroFactura(leer(f, 'establecimiento'), leer(f, 'punto_expedicion'), leer(f, 'numero'));
-  const prov = texto(leerPrimero(f, 'proveedor.razon_social', 'proveedor_razon_social', 'proveedor'));
+  const nro = texto(leer(f, 'numero_comprobante')) || formatoNumeroFactura(leer(f, 'establecimiento'), leer(f, 'punto_expedicion'), leer(f, 'numero'));
+  const prov = texto(leerPrimero(f, 'proveedor_nombre', 'proveedor.persona.razon_social', 'proveedor.razon_social'));
   return `${nro || `#${texto(leer(f, 'id'))}`} · ${prov}`;
 }
 
@@ -107,24 +108,26 @@ export function FormularioRecepcion({
       }
     });
 
-  const guardar = () =>
-    ejecutar(
-      async () =>
-        (await guardarRecepcion({
-          ...(id ? { id } : {}),
-          fecha,
-          facturaCompraId: Number(facturaId),
-          depositoId: Number(depositoId),
-          observacion: observacion || null,
-          detalles: lineas.filter((l) => l.cantidad > 0).map((l) => ({ detalleOrigenId: l.detalleOrigenId, cantidad: l.cantidad })),
-        } as never)) as ResultadoAccion,
-    );
+  const guardar = () => {
+    const aRecibir = lineas.filter((l) => l.cantidad > 0);
+    // QA: un arreglo vacío no debe llegar al backend (antes significaba "recibir todo lo pendiente").
+    if (aRecibir.length === 0) return setRes({ ok: false, error: 'Indique al menos una cantidad a recibir' });
+    const datos: RecepcionInput = {
+      ...(id ? { id } : {}),
+      fecha,
+      facturaCompraId: Number(facturaId),
+      depositoId: Number(depositoId),
+      observacion: observacion || null,
+      detalles: aRecibir.map((l) => ({ detalleOrigenId: l.detalleOrigenId, cantidad: l.cantidad })),
+    };
+    ejecutar(async () => (await guardarRecepcion(datos)) as ResultadoAccion);
+  };
 
   const err = erroresPorCampo(res);
   const totalCosto = lineas.reduce((a, l) => a + Math.round(l.cantidad * l.costoUnitarioGs), 0);
   const opcFacturas: Opcion[] = pendientes.map((f) => ({ valor: texto(leer(f, 'id')), etiqueta: etiquetaFactura(f) }));
   if (facturaId && !opcFacturas.some((o) => o.valor === facturaId)) {
-    opcFacturas.unshift({ valor: facturaId, etiqueta: texto(leerPrimero(registro, 'factura', 'numero_factura')) || `Factura #${facturaId}` });
+    opcFacturas.unshift({ valor: facturaId, etiqueta: registro && leer(registro, 'factura') ? etiquetaFactura(leer(registro, 'factura') as Fila) : `Factura #${facturaId}` });
   }
 
   return (
@@ -245,7 +248,7 @@ export function FormularioRecepcion({
               </Boton>
             ) : null}
           </Seccion>
-          {id ? <PanelDocumentosRelacionados relacionados={leerPrimero(registro, 'relacionados', 'documentosRelacionados')} /> : null}
+          {id ? <PanelDocumentosRelacionados relacionados={{ origen: docsRel('factura_compra', leer(registro, 'factura')), destino: [] }} /> : null}
         </aside>
       </div>
       <button type="submit" hidden />

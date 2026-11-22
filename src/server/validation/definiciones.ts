@@ -112,6 +112,8 @@ export const descuentoInput = z
     prioridad: z.number().int().min(1).max(32000).nullish(),
     acumulable: z.boolean().nullish(),
     todasSucursales: z.boolean().nullish(),
+    /** QA: el formulario envía el estado; antes se descartaba en silencio. */
+    estado: estadoRegistro.nullish(),
     sucursalIds: z.array(id),
     articulos: z.array(descuentoArticuloInput).min(1, 'Agregue al menos un artículo'),
   })

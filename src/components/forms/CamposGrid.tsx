@@ -54,7 +54,20 @@ export function valoresIniciales(campos: CampoDef[], registro: Fila | null): Val
     let val: unknown = r === undefined || r === null ? (c.defecto ?? null) : r;
     if (c.tipo === 'check') val = Boolean(val);
     if (c.tipo === 'entidad') {
-      v[`${c.clave}__etiqueta`] = registro ? texto(leerPrimero(registro, c.claveEtiqueta ?? '', `${c.clave.replace(/Id$/, '')}.razon_social`, `${c.clave.replace(/Id$/, '')}.descripcion`)) : '';
+      const base = c.clave.replace(/Id$/, '');
+      v[`${c.clave}__etiqueta`] = registro
+        ? texto(
+            leerPrimero(
+              registro,
+              c.claveEtiqueta ?? '',
+              `${base}.persona.razon_social`,
+              `${base}.razon_social`,
+              `${base}_nombre`,
+              `${base}.descripcion`,
+              `${base}.nombre`,
+            ),
+          )
+        : '';
     }
     v[c.clave] = val;
   }

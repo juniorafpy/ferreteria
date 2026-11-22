@@ -55,7 +55,7 @@ export function TablaAplicacion({
             const sel = (aplicado[id] ?? 0) > 0;
             const vencida = texto(leer(c, 'fecha_vencimiento')) < new Date().toISOString().slice(0, 10);
             const doc =
-              texto(leerPrimero(c, 'numero_factura', 'factura')) ||
+              texto(leerPrimero(c, 'numero_completo', 'numero_comprobante', 'numero_factura')) ||
               formatoNumeroFactura(leerPrimero(c, 'establecimiento', 'factura.establecimiento'), leerPrimero(c, 'punto_expedicion', 'factura.punto_expedicion'), leerPrimero(c, 'numero', 'factura.numero')) ||
               `#${id}`;
             return (

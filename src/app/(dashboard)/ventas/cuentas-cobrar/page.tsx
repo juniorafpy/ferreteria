@@ -9,12 +9,11 @@ export const metadata = { title: 'Cuentas a cobrar' };
 
 export default async function CuentasCobrar({ searchParams }: PropsLista) {
   const sp = await searchParams;
-  const filas = comoFilas(await seguro(() => listarCuentasCobrar(filtroLista(sp)), []));
+  const filas = comoFilas(await seguro(() => listarCuentasCobrar({ clienteId: filtroLista(sp).clienteId ?? null, q: filtroLista(sp).q ?? null }), []));
   return (
     <ListadoDocumentos
       titulo="Cuentas a cobrar"
-      filtros={['fechas', 'estado', 'cliente']}
-      estados={['pendiente', 'parcial', 'pagado', 'anulado']}
+      filtros={['cliente']}
       valores={valoresParams(sp)}
       filas={filas}
       acciones={
@@ -24,7 +23,8 @@ export default async function CuentasCobrar({ searchParams }: PropsLista) {
       }
       columnas={[
         { clave: 'cliente', titulo: 'Cliente', alternativas: ['cliente.razon_social', 'cliente_razon_social', 'receptor_razon_social'] },
-        { clave: 'numero_factura', titulo: 'Factura', alternativas: ['factura'], tipo: 'mono' },
+        { clave: 'documento', titulo: 'RUC/CI', tipo: 'mono' },
+        { clave: 'numero_completo', titulo: 'Factura', tipo: 'mono' },
         { clave: 'numero_cuota', titulo: 'Cuota', tipo: 'numero' },
         { clave: 'fecha_vencimiento', titulo: 'Vencimiento', tipo: 'fecha' },
         { clave: 'monto_gs', titulo: 'Monto', tipo: 'gs' },

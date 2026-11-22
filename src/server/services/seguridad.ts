@@ -69,12 +69,15 @@ export async function cargarSesion(
   if (rolesUsuario.length === 0) return null;
 
   const filasPermisos = await db
-    .selectDistinct({ codigo: permisos.codigo })
+    .selectDistinct({ codigo: permisos.codigo, rolId: roles.id })
     .from(usuarioRoles)
     .innerJoin(roles, eq(roles.id, usuarioRoles.rol_id))
     .innerJoin(rolPermisos, eq(rolPermisos.rol_id, roles.id))
     .innerJoin(permisos, eq(permisos.id, rolPermisos.permiso_id))
     .where(filtroRol);
+  // QA: el tope de descuento manual solo cuenta en los roles que otorgan ventas.descuento_manual
+  // (antes se tomaba el máximo de TODOS los roles, inflando el tope con roles sin el permiso).
+  const rolesConDescuento = new Set(filasPermisos.filter((p) => p.codigo === 'ventas.descuento_manual').map((p) => p.rolId));
 
   return {
     usuarioId: u.id,
@@ -82,8 +85,8 @@ export async function cargarSesion(
     nombre: u.nombre,
     empresaId,
     sucursalId,
-    permisos: filasPermisos.map((p) => p.codigo).sort(),
-    descuentoManualMaxPct: Math.max(0, ...rolesUsuario.map((r) => Number(r.max))),
+    permisos: [...new Set(filasPermisos.map((p) => p.codigo))].sort(),
+    descuentoManualMaxPct: Math.max(0, ...rolesUsuario.filter((r) => rolesConDescuento.has(r.id)).map((r) => Number(r.max))),
     empresaNombre: u.empresaNombre,
     sucursalNombre: suc.nombre,
   };

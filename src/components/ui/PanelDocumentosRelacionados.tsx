@@ -45,7 +45,7 @@ function Lista({ titulo, docs }: { titulo: string; docs: Fila[] }) {
             const tipo = texto(leerPrimero(d, 'tipo', 'tipo_documento', 'origen_tipo'));
             const id = texto(leer(d, 'id'));
             const base = RUTAS[tipo];
-            const nombre = `${NOMBRES[tipo] ?? tipo} ${texto(leerPrimero(d, 'numero_formateado', 'numero', 'id'))}`;
+            const nombre = `${NOMBRES[tipo] ?? tipo} ${texto(leerPrimero(d, 'numero_completo', 'numero_comprobante', 'numero_formateado', 'numero', 'id'))}`;
             return (
               <li key={`${tipo}-${id}-${i}`} className="flex items-center justify-between gap-2 rounded border border-borde/70 px-2 py-1 text-[12px]">
                 <span className="flex min-w-0 items-center gap-1.5">
@@ -70,6 +70,18 @@ function Lista({ titulo, docs }: { titulo: string; docs: Fila[] }) {
       )}
     </div>
   );
+}
+
+/**
+ * Normaliza documentos relacionados del backend a filas con `tipo` (para el panel).
+ * `x` puede ser un objeto, una lista o una lista de envoltorios (`anidado`, ej. { orden: {...} }).
+ */
+export function docsRel(tipo: string, x: unknown, anidado?: string): Fila[] {
+  const lista = Array.isArray(x) ? x : x && typeof x === 'object' ? [x] : [];
+  return (lista as Fila[])
+    .map((d) => (anidado ? (leer(d, anidado) as Fila | undefined) : d))
+    .filter((d): d is Fila => !!d && typeof d === 'object')
+    .map((d) => ({ ...d, tipo }));
 }
 
 /**

@@ -125,7 +125,7 @@ export function FormularioDescuento({ registro, sucursales }: { registro: Fila |
         ocupado={ocupado}
       />
       {res ? res.ok ? <Aviso tipo="exito">Descuento guardado.</Aviso> : <Aviso>{res.error}</Aviso> : null}
-      {rangoInvalido ? <Aviso>La fecha "hasta" debe ser igual o posterior a "desde".</Aviso> : null}
+      {rangoInvalido ? <Aviso>La fecha “hasta” debe ser igual o posterior a “desde”.</Aviso> : null}
 
       <Seccion titulo="Cabecera">
         <CamposGrid campos={CAMPOS} valores={cab} errores={erroresPorCampo(res)} onCambiar={(k, v) => setCab((x) => ({ ...x, [k]: v }))} />

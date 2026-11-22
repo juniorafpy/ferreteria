@@ -24,7 +24,7 @@ export default async function CuentasPagar({ searchParams }: PropsLista) {
       }
       columnas={[
         { clave: 'proveedor', titulo: 'Proveedor', alternativas: ['proveedor.razon_social', 'proveedor_razon_social'] },
-        { clave: 'numero_factura', titulo: 'Factura', alternativas: ['factura', 'facturaCompra.numero'], tipo: 'mono' },
+        { clave: 'numero_comprobante', titulo: 'Factura', tipo: 'mono' },
         { clave: 'numero_cuota', titulo: 'Cuota', tipo: 'numero' },
         { clave: 'fecha_vencimiento', titulo: 'Vencimiento', tipo: 'fecha' },
         { clave: 'monto_gs', titulo: 'Monto', tipo: 'gs' },

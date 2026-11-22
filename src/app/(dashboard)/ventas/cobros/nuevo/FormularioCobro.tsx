@@ -81,7 +81,7 @@ export function FormularioCobro() {
             ultimosDigitos: m.medioPago === 'tarjeta' && m.ultimosDigitos ? m.ultimosDigitos : null,
           })),
         observacion: observacion || null,
-      } as never)) as ResultadoAccion;
+      })) as ResultadoAccion;
       setRes(r);
       if (r.ok) {
         router.push('/ventas/cobros');

@@ -42,6 +42,10 @@ export type ReferenciaOrigen = {
   precioUnitarioGs: number;
   cantidad: number;
   descuentoGs: number;
+  /** Cantidad ya facturada del ítem origen (facturas confirmadas). */
+  cantidadFacturada?: number;
+  /** Descuento ya facturado del ítem origen (facturas confirmadas). */
+  descuentoFacturadoGs?: number;
   origenDescuento: 'automatico' | 'manual' | 'ninguno';
   descuentoId: number | null;
 };
@@ -101,7 +105,8 @@ export async function prepararLineasVenta(
   const { arts, pres } = await cargarArticulos(tx, ctx.empresaId, p.lineas.map((l) => l.articuloId));
   const out: LineaPreparada[] = [];
 
-  for (const [i, l] of p.lineas.entries()) {
+  for (const [i, l0] of p.lineas.entries()) {
+    let l = l0;
     const a = arts.get(l.articuloId)!;
     asegurar(a.estado === 'activo', `El artículo ${a.codigo} está inactivo`);
     if (!a.permite_decimales) {
@@ -119,11 +124,21 @@ export async function prepararLineasVenta(
     // Descuento de referencia: el del origen prorrateado, o el automático vigente.
     let auto: { gs: number; id: number | null; origen: LineaPreparada['origen_descuento'] };
     if (ref && precio === ref.precioUnitarioGs) {
+      // QA: prorrateo del descuento pactado. La porción que completa el saldo del ítem recibe el
+      // remanente (descuento pactado − ya facturado) para que la suma nunca difiera del pactado.
+      const pendiente = ref.cantidad - (ref.cantidadFacturada ?? 0);
+      const prorrateo =
+        l.cantidad + 1e-6 >= pendiente && ref.descuentoFacturadoGs !== undefined
+          ? Math.max(0, ref.descuentoGs - ref.descuentoFacturadoGs)
+          : Math.round((ref.descuentoGs * l.cantidad) / ref.cantidad);
       auto = {
-        gs: Math.min(bruto, Math.round((ref.descuentoGs * l.cantidad) / ref.cantidad)),
+        gs: Math.min(bruto, prorrateo),
         id: ref.descuentoId,
         origen: ref.origenDescuento,
       };
+      // Diferencias de 1 Gs por redondeo del prorrateo (borradores calculados antes de otra
+      // facturación parcial) no constituyen un descuento manual.
+      if (l.descuentoGs != null && Math.abs(l.descuentoGs - auto.gs) <= 1) l = { ...l, descuentoGs: auto.gs };
     } else {
       const r = await resolverDescuento(tx, {
         empresaId: ctx.empresaId,

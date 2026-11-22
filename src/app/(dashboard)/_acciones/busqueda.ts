@@ -72,8 +72,8 @@ export async function obtenerFacturaCompraUI(id: number) {
   return seguro(() => obtenerFacturaCompra(id), null as unknown);
 }
 export async function cuentasCobrarUI(clienteId?: number) {
-  return seguro(() => listarCuentasCobrar({ clienteId }), [] as unknown);
+  return seguro(() => listarCuentasCobrar({ clienteId: clienteId ?? null, soloPendientes: true }), [] as unknown);
 }
 export async function cuentasPagarUI(proveedorId?: number) {
-  return seguro(() => listarCuentasPagar({ proveedorId }), [] as unknown);
+  return seguro(() => listarCuentasPagar({ proveedorId: proveedorId ?? null, soloPendientes: true }), [] as unknown);
 }

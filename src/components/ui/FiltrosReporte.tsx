@@ -82,7 +82,7 @@ export function FiltrosReporte({
       ) : null}
       {filtros.includes('sucursal') ? (
         <Field etiqueta="Sucursal" className="w-44">
-          <Select value={v.sucursalId ?? ''} onChange={(e) => setV({ ...v, sucursalId: e.target.value })} opciones={sucursales} placeholder="Todas" />
+          <Select value={v.sucursalId ?? ''} onChange={(e) => setV({ ...v, sucursalId: e.target.value })} opciones={sucursales} placeholder="Sucursal actual" />
         </Field>
       ) : null}
       {filtros.includes('deposito') ? (

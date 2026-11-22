@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ERP Ferretero
 
-## Getting Started
+ERP para ferretería con facturación electrónica paraguaya (SIFEN), inventario multi-depósito,
+compras, ventas, caja, cuentas corrientes y contabilidad de partida doble.
 
-First, run the development server:
+## Stack
+
+- **Next.js 15** (App Router, Server Components, Server Actions) + React 19 + TypeScript
+- **PostgreSQL** con **Drizzle ORM** y migraciones SQL versionadas
+- **Zod** para validación de entrada
+- **Tailwind CSS 4**
+- Pruebas de integración con **PGlite** (PostgreSQL en memoria) y `node:test`
+
+## Puesta en marcha
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local        # ajuste DATABASE_URL y SESSION_SECRET
+npm run db:migrate                # aplica ./drizzle
+npm run db:seed                   # datos demo (idempotente)
+npm run dev                       # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Variables de entorno:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Uso |
+| --- | --- |
+| `DATABASE_URL` | Cadena de conexión PostgreSQL |
+| `SESSION_SECRET` | Secreto HMAC para la cookie de sesión |
+| `SIFEN_CSC`, `SIFEN_CERT_PASSWORD` | Referencias usadas por la configuración SIFEN (no se guardan en la BD) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Credenciales demo y detalle del seed: [`src/db/seed/README.md`](src/db/seed/README.md)
+(usuario `admin` / `Admin.Ferre2026`).
 
-## Learn More
+## Estructura
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/(dashboard)/        Pantallas por módulo (definiciones, compras, ventas, caja,
+                          contabilidad, ajustes, reportes)
+  app/api/                Route Handlers (CSV de reportes, consulta SIFEN)
+  components/             UI reutilizable (grillas, formularios, tablas, layout)
+  db/schema/              Esquema Drizzle (fuente de verdad)
+  db/seed/                Catálogos, empresa demo, seguridad y contabilidad
+  lib/ui/                 Formato, navegación, columnas y helpers de cliente
+  server/actions/         Server Actions ("use server") por módulo
+  server/queries/         Consultas de lectura para Server Components
+  server/services/        Reglas de negocio y transacciones atómicas
+  server/fiscal/          IVA, RUC/DV, CDC y formato SIFEN
+  server/validation/      Esquemas Zod compartidos con el frontend
+tests/                    Pruebas de integración sobre PGlite
+drizzle/                  Migraciones SQL + triggers de integridad
+docs/CONTRATO.md          Contrato backend ↔ frontend
+AUDITORIA.md              Informe de la auditoría QA
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Comando | Descripción |
+| --- | --- |
+| `npm run dev` | Servidor de desarrollo |
+| `npm run build` / `npm start` | Build y ejecución de producción |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | ESLint |
+| `npm test` | Suite de integración (PGlite, sin servidor externo) |
+| `npm run db:generate` | Genera migración tras cambiar el esquema |
+| `npm run db:migrate` | Aplica migraciones a PostgreSQL |
+| `npm run db:push` | Sincroniza el esquema sin migraciones (desarrollo) |
+| `npm run db:seed` | Carga/actualiza datos demo |
 
-## Deploy on Vercel
+Verificación completa sin PostgreSQL:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npx tsx src/db/seed/verificar-pglite.ts
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Reglas de negocio cubiertas
+
+- Persona única que puede ser cliente y proveedor; RUC con DV validado.
+- IVA incluido en guaraníes enteros, con desglose por línea que suma exactamente al total.
+- Descuentos automáticos por artículo, sucursal, fecha, cantidad mínima, prioridad y tope;
+  descuento manual limitado por permiso y porcentaje del rol, revalidado en el servidor.
+- Documentos numerados sin huecos, CDC único de 44 dígitos.
+- Stock por transacción atómica, sin negativos; kardex append-only.
+- Anulaciones que revierten stock, saldos, cuentas y asientos (sin borrado físico).
+- Asientos con `Debe = Haber` validado en servicio y con trigger diferido en la BD.
+- Reportes de libros IVA, mayor, sumas y saldos y kardex que cuadran con las transacciones.
+
+## Estado de SIFEN
+
+El adaptador de `src/server/services/sifen/` es un **stub de desarrollo** que aprueba documentos
+con CDC válido. Para producción debe implementarse la firma XML y la integración real con la SET.

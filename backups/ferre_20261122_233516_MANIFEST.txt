@@ -1,0 +1,20 @@
+﻿BACKUP BASE DE DATOS - ERP FERRE
+================================
+Fecha (local):        2026-11-22 23:35:17 -03:00
+Servidor:             PostgreSQL 17.12 (localhost:5432)
+Base de datos:        ferre
+Tablas (public):      69
+Formato custom:       ferre_20261122_233516.dump  (0.34 MB)
+Formato SQL plano:    ferre_20261122_233516.sql  (0.28 MB)
+
+SHA256 custom:        58C1F6E9916DB9FB46972A5B9C5CE2DB28560BBB62EE5D7A4DF762534E5066AD
+SHA256 SQL:           9914FE57BFAFDE11083B45B0C9C450534AEF424C24A5EFC3DA84E08E024A94DC
+
+RESTAURACION (equipo destino con PostgreSQL):
+  createdb -U postgres ferre
+  pg_restore -U postgres -d ferre --no-owner --no-privileges "ferre_20261122_233516.dump"
+  -- o bien:
+  psql -U postgres -d ferre -f "ferre_20261122_233516.sql"
+
+NOTA: los dumps se generaron con --no-owner --no-privileges para facilitar
+la restauracion en otro equipo/usuario. No incluyen roles ni passwords.
